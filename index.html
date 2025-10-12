@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Survival - Dodge the Apples!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .score-container {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score-value {
+            font-size: 32px;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        canvas {
+            background: #1a1a2e;
+            border: 4px solid #ffd700;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .controls {
+            margin-top: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .powerup-info {
+            margin-top: 15px;
+            color: white;
+            font-size: 12px;
+            max-width: 600px;
+        }
+
+        .active-effects {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .effect-badge {
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .ghost-mode-badge {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 215, 0, 0.9);
+            color: #000;
+            font-weight: bold;
+            border-radius: 10px;
+            font-size: 16px;
+            animation: glow 2s infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(255, 215, 0, 1); }
+        }
+
+        .menu-panel {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px;
+            border-radius: 15px;
+            border: 3px solid #ffd700;
+            color: white;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+
+        .menu-panel h2 {
+            margin: 0 0 20px 0;
+            text-align: center;
+            color: #ffd700;
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+
+        .difficulty-btn {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .difficulty-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+        }
+
+        .difficulty-btn.active {
+            border: 2px solid #ffd700;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .difficulty-btn.easy { background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); }
+        .difficulty-btn.medium { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); }
+        .difficulty-btn.hard { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); }
+        .difficulty-btn.impossible { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .difficulty-btn.hacker {
+            background: linear-gradient(135deg, #000000 0%, #8b5cf6 50%, #000000 100%);
+            animation: hackerGlow 2s infinite;
+        }
+
+        @keyframes hackerGlow {
+            0%, 100% { box-shadow: 0 0 10px rgba(139, 92, 246, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(139, 92, 246, 1); }
+        }
+
+        .toggle-container {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #ffd700;
+            text-align: center;
+        }
+
+        .toggle-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #ffd700;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(30px);
+        }
+
+        .difficulty-desc {
+            font-size: 11px;
+            color: #aaa;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .leaderboard-panel {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px;
+            border-radius: 15px;
+            border: 3px solid #ffd700;
+            color: white;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            min-width: 280px;
+        }
+
+        .leaderboard-panel h2 {
+            margin: 0 0 20px 0;
+            text-align: center;
+            color: #ffd700;
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+
+        .leaderboard-section {
+            margin-bottom: 25px;
+        }
+
+        .leaderboard-section h3 {
+            font-size: 16px;
+            color: #ffd700;
+            margin-bottom: 10px;
+            text-align: center;
+            border-bottom: 2px solid #ffd700;
+            padding-bottom: 5px;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .leaderboard-entry.top {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 237, 78, 0.2) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+        }
+
+        .leaderboard-rank {
+            color: #ffd700;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            color: #fff;
+        }
+
+        .leaderboard-score {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .leaderboard-empty {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            font-size: 12px;
+            padding: 10px;
+        }
+
+        .global-notice {
+            text-align: center;
+            color: #aaa;
+            font-size: 11px;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+            border: 3px solid #ffd700;
+        }
+
+        .game-over h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ff4757;
+        }
+
+        .game-over button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .game-over button:hover {
+            transform: scale(1.1);
+        }
+
+        .warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            font-size: 48px;
+            font-weight: bold;
+            display: none;
+            z-index: 999;
+            animation: flashWarning 0.5s infinite;
+        }
+
+        @keyframes flashWarning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ghost-mode-badge" id="ghostBadge" style="display: none;">👻 GHOST MODE</div>
+
+    <div class="menu-panel">
+        <h2>🎮 Difficulty</h2>
+        <button class="difficulty-btn easy active" onclick="setDifficulty('easy')">
+            EASY
+            <div class="difficulty-desc">Perfect for beginners</div>
+        </button>
+        <button class="difficulty-btn medium" onclick="setDifficulty('medium')">
+            MEDIUM
+            <div class="difficulty-desc">Balanced challenge</div>
+        </button>
+        <button class="difficulty-btn hard" onclick="setDifficulty('hard')">
+            HARD
+            <div class="difficulty-desc">For experienced players</div>
+        </button>
+        <button class="difficulty-btn impossible" onclick="setDifficulty('impossible')">
+            IMPOSSIBLE
+            <div class="difficulty-desc">Good luck...</div>
+        </button>
+        <button class="difficulty-btn hacker" onclick="setDifficulty('hacker')">
+            HACKER
+            <div class="difficulty-desc">You asked for this</div>
+        </button>
+
+        <div class="toggle-container">
+            <span class="toggle-label">👻 GHOST MODE</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="ghostToggle" onchange="toggleGhostMode()">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <div class="leaderboard-panel">
+        <h2>🏆 Leaderboard</h2>
+
+        <div class="leaderboard-section">
+            <h3>👻 Ghost Mode</h3>
+            <div id="ghostLeaderboard">
+                <div class="leaderboard-empty">No runs yet!</div>
+            </div>
+        </div>
+
+        <div class="leaderboard-section">
+            <h3>💀 Normal Mode</h3>
+            <div id="normalLeaderboard">
+                <div class="leaderboard-empty">No runs yet!</div>
+            </div>
+        </div>
+
+        <div class="leaderboard-section">
+            <h3>🌍 Global</h3>
+            <div id="globalLeaderboard">
+                <div class="leaderboard-empty">Coming soon...</div>
+            </div>
+            <div class="global-notice">Global leaderboard under construction</div>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="score-container">
+            <div class="score-item">
+                <div>SURVIVAL TIME</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+            <div class="score-item">
+                <div>BEST TIME</div>
+                <div class="score-value" id="highScore">0</div>
+            </div>
+            <div class="score-item">
+                <div>LENGTH</div>
+                <div class="score-value" id="length">1</div>
+            </div>
+            <div class="score-item">
+                <div>APPLES</div>
+                <div class="score-value" id="appleCount">1</div>
+            </div>
+        </div>
+
+        <div class="active-effects" id="activeEffects"></div>
+
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+        <div class="controls">
+            <strong>CONTROLS:</strong> Arrow Keys or WASD | <strong>PAUSE:</strong> Space<br>
+            <strong>OBJECTIVE:</strong> DODGE the charging apples! Don't reach length 50!
+            <div class="powerup-info">
+                <strong>POWERUPS:</strong>
+                ✂️ Shorten Length (-5) |
+                🐢 Slow Apples |
+                ❄️ Freeze Apples |
+                💎 2x Points |
+                🌈 Rainbow Mode |
+                ⚡ Speed Boost |
+                🛡️ Shield (1 hit) |
+                💣 Destroy All Apples
+            </div>
+        </div>
+    </div>
+
+    <div class="warning" id="warning">LENGTH WARNING!</div>
+
+    <div class="game-over" id="gameOver">
+        <h1>GAME OVER!</h1>
+        <div style="font-size: 24px; margin: 20px 0;">
+            Survival Time: <span id="finalScore" style="color: #ffd700;">0</span>
+        </div>
+        <div style="font-size: 18px; margin: 10px 0;">
+            Final Length: <span id="finalLength" style="color: #ffd700;">0</span>
+        </div>
+        <div style="font-size: 18px; margin: 10px 0;">
+            Cause: <span id="deathCause" style="color: #ff4757;">Unknown</span>
+        </div>
+        <button onclick="restartGame()">PLAY AGAIN</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [{x: 15, y: 15}];
+        let dx = 0;
+        let dy = 0;
+        let apples = [];
+        let score = 0;
+        let highScore = localStorage.getItem('snakeSurvivalHighScore') || 0;
+        let gameSpeed = 100;
+        let gameLoop;
+        let isPaused = false;
+        let particles = [];
+        let ghostMode = false; // Default off
+        let startTime = null;
+        let survivalTime = 0;
+        let currentDifficulty = 'easy';
+        let nextSpawnEdge = null; // Track where next apple will spawn
+        let nextSpawnPosition = null; // Track exact position on edge
+
+        // Leaderboard storage
+        let ghostLeaderboard = JSON.parse(localStorage.getItem('snakeSurvivalGhostLeaderboard')) || [];
+        let normalLeaderboard = JSON.parse(localStorage.getItem('snakeSurvivalNormalLeaderboard')) || [];
+
+        // Difficulty settings
+        const difficultySettings = {
+            easy: {
+                appleSpawnRate: 3500,
+                appleSpawnMin: 1500,
+                appleSpeed: 0.12,
+                growthBefore30: 1,
+                growthAfter30: 1,
+                hardModeTime: 45
+            },
+            medium: {
+                appleSpawnRate: 3000,
+                appleSpawnMin: 1000,
+                appleSpeed: 0.15,
+                growthBefore30: 1,
+                growthAfter30: 2,
+                hardModeTime: 30
+            },
+            hard: {
+                appleSpawnRate: 2500,
+                appleSpawnMin: 800,
+                appleSpeed: 0.18,
+                growthBefore30: 1,
+                growthAfter30: 3,
+                hardModeTime: 25
+            },
+            impossible: {
+                appleSpawnRate: 2000,
+                appleSpawnMin: 600,
+                appleSpeed: 0.22,
+                growthBefore30: 2,
+                growthAfter30: 4,
+                hardModeTime: 20
+            },
+            hacker: {
+                appleSpawnRate: 1500,
+                appleSpawnMin: 400,
+                appleSpeed: 0.3,
+                growthBefore30: 3,
+                growthAfter30: 5,
+                hardModeTime: 15
+            }
+        };
+
+        // Powerup system
+        let powerups = [];
+        let activeEffects = {
+            slowApples: 0,
+            freezeApples: 0,
+            multiplier: 0,
+            rainbow: 0,
+            speedBoost: 0,
+            shield: false
+        };
+
+        const powerupTypes = [
+            { type: 'shorten', color: '#ff6b6b', emoji: '✂️', duration: 0, weight: 3 },
+            { type: 'slowApples', color: '#8bc34a', emoji: '🐢', duration: 8000, weight: 3 },
+            { type: 'freezeApples', color: '#03a9f4', emoji: '❄️', duration: 5000, weight: 3 },
+            { type: 'multiplier', color: '#9c27b0', emoji: '💎', duration: 10000, weight: 2 },
+            { type: 'rainbow', color: '#e91e63', emoji: '🌈', duration: 8000, weight: 2 },
+            { type: 'speed', color: '#ffeb3b', emoji: '⚡', duration: 6000, weight: 3 },
+            { type: 'shield', color: '#00bcd4', emoji: '🛡️', duration: 0, weight: 2 },
+            { type: 'nuke', color: '#ff5722', emoji: '💣', duration: 0, weight: 0.5 } // Rare!
+        ];
+
+        document.getElementById('highScore').textContent = highScore;
+
+        function createParticles(x, y, color, count = 10) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x * gridSize + gridSize / 2,
+                    y: y * gridSize + gridSize / 2,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    life: 1,
+                    color: color
+                });
+            }
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3;
+                p.life -= 0.02;
+                return p.life > 0;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x, p.y, 4, 4);
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        function spawnApple() {
+            // Use predetermined position or generate random one for first spawn
+            let x, y;
+
+            if (nextSpawnEdge !== null && nextSpawnPosition !== null) {
+                // Use predetermined spawn location
+                switch(nextSpawnEdge) {
+                    case 0: x = nextSpawnPosition; y = 0; break;
+                    case 1: x = tileCount - 1; y = nextSpawnPosition; break;
+                    case 2: x = nextSpawnPosition; y = tileCount - 1; break;
+                    case 3: x = 0; y = nextSpawnPosition; break;
+                }
+            } else {
+                // First spawn - random
+                const edge = Math.floor(Math.random() * 4);
+                switch(edge) {
+                    case 0: x = Math.floor(Math.random() * tileCount); y = 0; break;
+                    case 1: x = tileCount - 1; y = Math.floor(Math.random() * tileCount); break;
+                    case 2: x = Math.floor(Math.random() * tileCount); y = tileCount - 1; break;
+                    case 3: x = 0; y = Math.floor(Math.random() * tileCount); break;
+                }
+            }
+
+            const settings = difficultySettings[currentDifficulty];
+            apples.push({
+                x: x,
+                y: y,
+                vx: 0,
+                vy: 0,
+                speed: settings.appleSpeed
+            });
+
+            // Set NEXT spawn location for indicator
+            nextSpawnEdge = Math.floor(Math.random() * 4);
+            nextSpawnPosition = Math.floor(Math.random() * tileCount);
+        }
+
+        function spawnPowerup() {
+            if (powerups.length < 3 && Math.random() < 0.4) {
+                // Weighted random selection
+                const totalWeight = powerupTypes.reduce((sum, p) => sum + p.weight, 0);
+                let random = Math.random() * totalWeight;
+                let type = powerupTypes[0];
+
+                for (let i = 0; i < powerupTypes.length; i++) {
+                    random -= powerupTypes[i].weight;
+                    if (random <= 0) {
+                        type = powerupTypes[i];
+                        break;
+                    }
+                }
+
+                powerups.push({
+                    x: Math.floor(Math.random() * tileCount),
+                    y: Math.floor(Math.random() * tileCount),
+                    ...type,
+                    spawnTime: Date.now()
+                });
+            }
+        }
+
+        function updateActiveEffects() {
+            const now = Date.now();
+            const container = document.getElementById('activeEffects');
+            container.innerHTML = '';
+
+            if (activeEffects.slowApples > now) {
+                addEffectBadge('🐢 SLOW APPLES', '#8bc34a');
+            }
+            if (activeEffects.freezeApples > now) {
+                addEffectBadge('❄️ FROZEN', '#03a9f4');
+            }
+            if (activeEffects.multiplier > now) {
+                addEffectBadge('💎 2x POINTS', '#9c27b0');
+            }
+            if (activeEffects.rainbow > now) {
+                addEffectBadge('🌈 RAINBOW', '#e91e63');
+            }
+            if (activeEffects.speedBoost > now) {
+                addEffectBadge('⚡ SPEED', '#ffeb3b');
+            }
+            if (activeEffects.shield) {
+                addEffectBadge('🛡️ SHIELD', '#00bcd4');
+            }
+        }
+
+        function addEffectBadge(text, color) {
+            const badge = document.createElement('div');
+            badge.className = 'effect-badge';
+            badge.textContent = text;
+            badge.style.background = color;
+            badge.style.color = '#000';
+            document.getElementById('activeEffects').appendChild(badge);
+        }
+
+        function activatePowerup(powerup) {
+            const now = Date.now();
+            createParticles(powerup.x, powerup.y, powerup.color, 20);
+
+            switch(powerup.type) {
+                case 'shorten':
+                    // Shorten snake by 5
+                    for (let i = 0; i < 5 && snake.length > 1; i++) {
+                        snake.pop();
+                    }
+                    updateLength();
+                    break;
+                case 'slowApples':
+                    activeEffects.slowApples = now + powerup.duration;
+                    break;
+                case 'freezeApples':
+                    activeEffects.freezeApples = now + powerup.duration;
+                    break;
+                case 'multiplier':
+                    activeEffects.multiplier = now + powerup.duration;
+                    break;
+                case 'rainbow':
+                    activeEffects.rainbow = now + powerup.duration;
+                    break;
+                case 'speed':
+                    activeEffects.speedBoost = now + powerup.duration;
+                    break;
+                case 'shield':
+                    activeEffects.shield = true;
+                    break;
+                case 'nuke':
+                    // Destroy all apples
+                    apples.forEach(apple => {
+                        createParticles(apple.x, apple.y, '#ff0000', 15);
+                    });
+                    apples = [];
+                    document.getElementById('appleCount').textContent = 0;
+                    break;
+            }
+        }
+
+        function updateLength() {
+            document.getElementById('length').textContent = snake.length;
+
+            // Show warning if close to limit
+            if (snake.length >= 45 && snake.length < 50) {
+                document.getElementById('warning').style.display = 'block';
+            } else {
+                document.getElementById('warning').style.display = 'none';
+            }
+
+            // Game over if length reaches 50 (ALWAYS, even in ghost mode)
+            if (snake.length >= 50) {
+                gameOver('TOO LONG!');
+            }
+        }
+
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            ctx.strokeStyle = '#16213e22';
+            for (let i = 0; i < tileCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * gridSize, 0);
+                ctx.lineTo(i * gridSize, canvas.height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, i * gridSize);
+                ctx.lineTo(canvas.width, i * gridSize);
+                ctx.stroke();
+            }
+
+            // Draw snake
+            snake.forEach((segment, index) => {
+                let color;
+                const now = Date.now();
+
+                if (activeEffects.rainbow > now) {
+                    const hue = (index * 30 + Date.now() / 10) % 360;
+                    color = `hsl(${hue}, 100%, 50%)`;
+                } else {
+                    color = index === 0 ? '#00ff00' : '#00cc00';
+                }
+
+                ctx.fillStyle = color;
+                ctx.fillRect(segment.x * gridSize + 1, segment.y * gridSize + 1, gridSize - 2, gridSize - 2);
+
+                // Head details
+                if (index === 0) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(segment.x * gridSize + 5, segment.y * gridSize + 5, 4, 4);
+                    ctx.fillRect(segment.x * gridSize + 11, segment.y * gridSize + 5, 4, 4);
+
+                    if (activeEffects.shield) {
+                        ctx.strokeStyle = '#00bcd4';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(segment.x * gridSize + gridSize/2, segment.y * gridSize + gridSize/2, gridSize/2 + 4, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.lineWidth = 1;
+                    }
+
+                    if (ghostMode) {
+                        ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(segment.x * gridSize + gridSize/2, segment.y * gridSize + gridSize/2, gridSize/2 + 3, 0, Math.PI * 2);
+                        ctx.stroke();
+                        ctx.lineWidth = 1;
+                    }
+                }
+            });
+
+            // Draw apples with direction indicators
+            apples.forEach(apple => {
+                const isFrozen = activeEffects.freezeApples > Date.now();
+
+                ctx.fillStyle = isFrozen ? '#87ceeb' : '#ff0000';
+                ctx.fillRect(apple.x * gridSize, apple.y * gridSize, gridSize, gridSize);
+
+                // Draw emoji
+                ctx.font = `${gridSize}px Arial`;
+                ctx.fillText(isFrozen ? '❄️' : '🍎', apple.x * gridSize, apple.y * gridSize + gridSize);
+
+                // Draw movement arrow
+                if (!isFrozen && (apple.vx !== 0 || apple.vy !== 0)) {
+                    ctx.strokeStyle = '#ffff00';
+                    ctx.lineWidth = 2;
+                    const centerX = apple.x * gridSize + gridSize / 2;
+                    const centerY = apple.y * gridSize + gridSize / 2;
+                    const arrowLen = 8;
+                    ctx.beginPath();
+                    ctx.moveTo(centerX, centerY);
+                    ctx.lineTo(centerX + apple.vx * arrowLen, centerY + apple.vy * arrowLen);
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+                }
+            });
+
+            // Draw powerups
+            powerups.forEach(powerup => {
+                const pulse = Math.sin(Date.now() / 200) * 2;
+                ctx.fillStyle = powerup.color;
+                ctx.fillRect(
+                    powerup.x * gridSize - pulse,
+                    powerup.y * gridSize - pulse,
+                    gridSize + pulse * 2,
+                    gridSize + pulse * 2
+                );
+                ctx.font = `${gridSize}px Arial`;
+                ctx.fillText(powerup.emoji, powerup.x * gridSize, powerup.y * gridSize + gridSize);
+            });
+
+            // Draw particles
+            drawParticles();
+
+            // Draw next spawn indicator with exact position
+            if (nextSpawnEdge !== null && nextSpawnPosition !== null) {
+                const spawnX = nextSpawnEdge === 0 || nextSpawnEdge === 2 ? nextSpawnPosition * gridSize :
+                               nextSpawnEdge === 1 ? canvas.width : 0;
+                const spawnY = nextSpawnEdge === 1 || nextSpawnEdge === 3 ? nextSpawnPosition * gridSize :
+                               nextSpawnEdge === 2 ? canvas.height : 0;
+
+                // Draw pulsing target circle at exact spawn location
+                const pulse = Math.sin(Date.now() / 200) * 5 + 10;
+
+                // Outer glow
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+                ctx.beginPath();
+                ctx.arc(spawnX + gridSize / 2, spawnY + gridSize / 2, pulse + 15, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Middle ring
+                ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(spawnX + gridSize / 2, spawnY + gridSize / 2, pulse + 5, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Inner target
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+                ctx.beginPath();
+                ctx.arc(spawnX + gridSize / 2, spawnY + gridSize / 2, pulse, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw crosshair
+                ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(spawnX + gridSize / 2 - 15, spawnY + gridSize / 2);
+                ctx.lineTo(spawnX + gridSize / 2 + 15, spawnY + gridSize / 2);
+                ctx.moveTo(spawnX + gridSize / 2, spawnY + gridSize / 2 - 15);
+                ctx.lineTo(spawnX + gridSize / 2, spawnY + gridSize / 2 + 15);
+                ctx.stroke();
+
+                // Draw arrow pointing to spawn
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+                switch(nextSpawnEdge) {
+                    case 0: // Top
+                        ctx.beginPath();
+                        ctx.moveTo(spawnX + gridSize / 2, spawnY + 25);
+                        ctx.lineTo(spawnX + gridSize / 2 - 10, spawnY + 10);
+                        ctx.lineTo(spawnX + gridSize / 2 + 10, spawnY + 10);
+                        ctx.fill();
+                        break;
+                    case 1: // Right
+                        ctx.beginPath();
+                        ctx.moveTo(spawnX - 25, spawnY + gridSize / 2);
+                        ctx.lineTo(spawnX - 10, spawnY + gridSize / 2 - 10);
+                        ctx.lineTo(spawnX - 10, spawnY + gridSize / 2 + 10);
+                        ctx.fill();
+                        break;
+                    case 2: // Bottom
+                        ctx.beginPath();
+                        ctx.moveTo(spawnX + gridSize / 2, spawnY - 25);
+                        ctx.lineTo(spawnX + gridSize / 2 - 10, spawnY - 10);
+                        ctx.lineTo(spawnX + gridSize / 2 + 10, spawnY - 10);
+                        ctx.fill();
+                        break;
+                    case 3: // Left
+                        ctx.beginPath();
+                        ctx.moveTo(spawnX + 25, spawnY + gridSize / 2);
+                        ctx.lineTo(spawnX + 10, spawnY + gridSize / 2 - 10);
+                        ctx.lineTo(spawnX + 10, spawnY + gridSize / 2 + 10);
+                        ctx.fill();
+                        break;
+                }
+
+                ctx.lineWidth = 1;
+            }
+        }
+
+        function moveSnake() {
+            if (isPaused) return;
+
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+            // Check wall collision based on ghost mode
+            if (ghostMode) {
+                // Ghost mode - wrap around walls
+                if (head.x < 0) head.x = tileCount - 1;
+                if (head.x >= tileCount) head.x = 0;
+                if (head.y < 0) head.y = tileCount - 1;
+                if (head.y >= tileCount) head.y = 0;
+            } else {
+                // Normal mode - walls kill you
+                if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                    gameOver('HIT WALL!');
+                    return;
+                }
+            }
+
+            // Check self-collision in normal mode
+            if (!ghostMode) {
+                for (let i = 1; i < snake.length; i++) {
+                    if (head.x === snake[i].x && head.y === snake[i].y) {
+                        gameOver('HIT YOURSELF!');
+                        return;
+                    }
+                }
+            }
+
+            // Check collision with apples (BAD!) - Bigger hitbox (1.5 tile radius)
+            for (let i = apples.length - 1; i >= 0; i--) {
+                const apple = apples[i];
+                const appleGridX = Math.floor(apple.x);
+                const appleGridY = Math.floor(apple.y);
+
+                // Check if within 1.5 tiles (bigger hitbox)
+                const distX = Math.abs(head.x - apple.x);
+                const distY = Math.abs(head.y - apple.y);
+                const distance = Math.sqrt(distX * distX + distY * distY);
+
+                if (distance < 1.5) {
+                    if (activeEffects.shield) {
+                        // Shield absorbs hit
+                        activeEffects.shield = false;
+                        apples.splice(i, 1);
+                        createParticles(appleGridX, appleGridY, '#00bcd4', 20);
+                    } else if (!ghostMode) {
+                        // Check if hit by apple - grow snake!
+                        const settings = difficultySettings[currentDifficulty];
+                        const timeSurvived = (Date.now() - startTime) / 1000; // seconds
+                        const growthAmount = timeSurvived > settings.hardModeTime ? settings.growthAfter30 : settings.growthBefore30;
+
+                        for (let g = 0; g < growthAmount; g++) {
+                            snake.push({...snake[snake.length - 1]});
+                        }
+                        updateLength();
+                        apples.splice(i, 1);
+                        createParticles(appleGridX, appleGridY, '#ff0000', 20);
+                    } else {
+                        // Ghost mode - just destroy apple and grow
+                        const settings = difficultySettings[currentDifficulty];
+                        const timeSurvived = (Date.now() - startTime) / 1000;
+                        const growthAmount = timeSurvived > settings.hardModeTime ? settings.growthAfter30 : settings.growthBefore30;
+
+                        for (let g = 0; g < growthAmount; g++) {
+                            snake.push({...snake[snake.length - 1]});
+                        }
+                        updateLength();
+                        apples.splice(i, 1);
+                        createParticles(appleGridX, appleGridY, '#ffd700', 15);
+                    }
+                }
+            }
+
+            snake.unshift(head);
+            snake.pop(); // Don't grow, maintain length
+
+            // Check powerup collision
+            powerups = powerups.filter(powerup => {
+                if (head.x === powerup.x && head.y === powerup.y) {
+                    activatePowerup(powerup);
+                    return false;
+                }
+                return Date.now() - powerup.spawnTime < 20000;
+            });
+
+            // Update apples - move towards snake head
+            const now = Date.now();
+            const isFrozen = activeEffects.freezeApples > now;
+            const isSlow = activeEffects.slowApples > now;
+
+            if (!isFrozen) {
+                apples.forEach(apple => {
+                    const dx = head.x - apple.x;
+                    const dy = head.y - apple.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist > 0) {
+                        let speed = apple.speed;
+                        if (isSlow) speed *= 0.5;
+
+                        apple.vx = (dx / dist) * speed;
+                        apple.vy = (dy / dist) * speed;
+                        apple.x += apple.vx;
+                        apple.y += apple.vy;
+                    }
+                });
+            }
+
+            // Update score (survival time)
+            if (startTime) {
+                const multiplier = activeEffects.multiplier > now ? 2 : 1;
+                survivalTime = Math.floor((Date.now() - startTime) / 100) * multiplier;
+                score = survivalTime;
+                document.getElementById('score').textContent = Math.floor(score / 10);
+            }
+
+            document.getElementById('appleCount').textContent = apples.length;
+            updateActiveEffects();
+            updateParticles();
+        }
+
+        function gameOver(cause) {
+            clearInterval(gameLoop);
+            clearInterval(appleSpawnInterval);
+            clearInterval(powerupSpawnInterval);
+
+            const finalScore = Math.floor(score / 10);
+
+            // Add to appropriate leaderboard
+            const entry = {
+                score: finalScore,
+                difficulty: currentDifficulty,
+                length: snake.length,
+                timestamp: Date.now()
+            };
+
+            if (ghostMode) {
+                ghostLeaderboard.push(entry);
+                ghostLeaderboard.sort((a, b) => b.score - a.score);
+                ghostLeaderboard = ghostLeaderboard.slice(0, 5); // Keep top 5
+                localStorage.setItem('snakeSurvivalGhostLeaderboard', JSON.stringify(ghostLeaderboard));
+            } else {
+                normalLeaderboard.push(entry);
+                normalLeaderboard.sort((a, b) => b.score - a.score);
+                normalLeaderboard = normalLeaderboard.slice(0, 5); // Keep top 5
+                localStorage.setItem('snakeSurvivalNormalLeaderboard', JSON.stringify(normalLeaderboard));
+            }
+
+            updateLeaderboards();
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('snakeSurvivalHighScore', highScore);
+                document.getElementById('highScore').textContent = Math.floor(highScore / 10);
+            }
+            document.getElementById('finalScore').textContent = finalScore;
+            document.getElementById('finalLength').textContent = snake.length;
+            document.getElementById('deathCause').textContent = cause;
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('warning').style.display = 'none';
+        }
+
+        function updateLeaderboards() {
+            // Update Ghost Mode leaderboard
+            const ghostContainer = document.getElementById('ghostLeaderboard');
+            if (ghostLeaderboard.length === 0) {
+                ghostContainer.innerHTML = '<div class="leaderboard-empty">No runs yet!</div>';
+            } else {
+                ghostContainer.innerHTML = ghostLeaderboard.map((entry, index) => `
+                    <div class="leaderboard-entry ${index === 0 ? 'top' : ''}">
+                        <span class="leaderboard-rank">#${index + 1}</span>
+                        <span class="leaderboard-name">${entry.difficulty.toUpperCase()}</span>
+                        <span class="leaderboard-score">${entry.score}s</span>
+                    </div>
+                `).join('');
+            }
+
+            // Update Normal Mode leaderboard
+            const normalContainer = document.getElementById('normalLeaderboard');
+            if (normalLeaderboard.length === 0) {
+                normalContainer.innerHTML = '<div class="leaderboard-empty">No runs yet!</div>';
+            } else {
+                normalContainer.innerHTML = normalLeaderboard.map((entry, index) => `
+                    <div class="leaderboard-entry ${index === 0 ? 'top' : ''}">
+                        <span class="leaderboard-rank">#${index + 1}</span>
+                        <span class="leaderboard-name">${entry.difficulty.toUpperCase()}</span>
+                        <span class="leaderboard-score">${entry.score}s</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function restartGame() {
+            snake = [{x: 15, y: 15}];
+            dx = 0;
+            dy = 0;
+            score = 0;
+            survivalTime = 0;
+            startTime = null;
+            gameSpeed = 100;
+            isPaused = false;
+            apples = [];
+            powerups = [];
+            particles = [];
+            nextSpawnEdge = null;
+            nextSpawnPosition = null;
+            activeEffects = {
+                slowApples: 0,
+                freezeApples: 0,
+                multiplier: 0,
+                rainbow: 0,
+                speedBoost: 0,
+                shield: false
+            };
+
+            document.getElementById('score').textContent = 0;
+            document.getElementById('length').textContent = 1;
+            document.getElementById('appleCount').textContent = 0;
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('warning').style.display = 'none';
+            document.getElementById('activeEffects').innerHTML = '';
+
+            // Start with one apple
+            spawnApple();
+            startGame();
+        }
+
+        let appleSpawnInterval;
+        let powerupSpawnInterval;
+
+        function startGame() {
+            clearInterval(gameLoop);
+            clearInterval(appleSpawnInterval);
+            clearInterval(powerupSpawnInterval);
+
+            startTime = Date.now();
+
+            gameLoop = setInterval(() => {
+                const now = Date.now();
+                let speed = gameSpeed;
+
+                if (activeEffects.speedBoost > now) {
+                    speed = speed * 0.7;
+                }
+
+                clearInterval(gameLoop);
+                gameLoop = setInterval(() => {
+                    moveSnake();
+                    drawGame();
+                }, speed);
+
+                moveSnake();
+                drawGame();
+            }, 100);
+
+            // Spawn apples progressively faster
+            const settings = difficultySettings[currentDifficulty];
+            let appleSpawnRate = settings.appleSpawnRate;
+            appleSpawnInterval = setInterval(() => {
+                spawnApple();
+                // Increase difficulty over time
+                appleSpawnRate = Math.max(settings.appleSpawnMin, appleSpawnRate - 50);
+                clearInterval(appleSpawnInterval);
+                appleSpawnInterval = setInterval(() => {
+                    spawnApple();
+                }, appleSpawnRate);
+            }, appleSpawnRate);
+
+            // Spawn powerups
+            powerupSpawnInterval = setInterval(() => {
+                spawnPowerup();
+            }, 5000);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                isPaused = !isPaused;
+                return;
+            }
+
+            // Prevent snake from reversing
+            if ((e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') && dy === 0) {
+                dx = 0;
+                dy = -1;
+                if (!gameLoop) restartGame();
+            } else if ((e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') && dy === 0) {
+                dx = 0;
+                dy = 1;
+                if (!gameLoop) restartGame();
+            } else if ((e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') && dx === 0) {
+                dx = -1;
+                dy = 0;
+                if (!gameLoop) restartGame();
+            } else if ((e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') && dx === 0) {
+                dx = 1;
+                dy = 0;
+                if (!gameLoop) restartGame();
+            }
+
+            // Toggle ghost mode with 'G' key
+            if (e.key === 'g' || e.key === 'G') {
+                ghostMode = !ghostMode;
+                document.getElementById('ghostBadge').style.display = ghostMode ? 'block' : 'none';
+                document.getElementById('ghostToggle').checked = ghostMode;
+            }
+        });
+
+        function setDifficulty(difficulty) {
+            currentDifficulty = difficulty;
+
+            // Update button styles
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.closest('.difficulty-btn').classList.add('active');
+
+            // Restart game if already playing
+            if (gameLoop) {
+                restartGame();
+            }
+        }
+
+        function toggleGhostMode() {
+            ghostMode = document.getElementById('ghostToggle').checked;
+            document.getElementById('ghostBadge').style.display = ghostMode ? 'block' : 'none';
+        }
+
+        // Initial draw and setup
+        drawGame();
+        spawnApple();
+        updateLeaderboards();
+
+        // Auto-start after 1 second
+        setTimeout(() => {
+            if (dx === 0 && dy === 0) {
+                dx = 1;
+                dy = 0;
+                startGame();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

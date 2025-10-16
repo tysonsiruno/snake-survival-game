@@ -39,7 +39,7 @@ limiter = Limiter(
 )
 
 # Initialize database
-from models import db, LeaderboardEntry
+from server.models import db, LeaderboardEntry
 
 db.init_app(app)
 

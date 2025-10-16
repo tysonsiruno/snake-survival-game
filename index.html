@@ -1116,6 +1116,10 @@
 
             updateLeaderboards();
 
+            // Submit to global leaderboard
+            const mode = ghostMode ? 'ghost' : 'normal';
+            submitToGlobalLeaderboard(finalScore, snake.length, currentDifficulty, mode);
+
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('snakeSurvivalHighScore', highScore);
@@ -1294,10 +1298,74 @@
             document.getElementById('ghostBadge').style.display = ghostMode ? 'block' : 'none';
         }
 
+        // ============================================================================
+        // GLOBAL LEADERBOARD API INTEGRATION
+        // ============================================================================
+
+        async function fetchGlobalLeaderboard() {
+            try {
+                const response = await fetch('/api/leaderboard/global?mode=all&limit=10');
+                const data = await response.json();
+
+                if (data.leaderboard && data.leaderboard.length > 0) {
+                    const globalContainer = document.getElementById('globalLeaderboard');
+                    globalContainer.innerHTML = data.leaderboard.map((entry, index) => `
+                        <div class="leaderboard-entry ${index === 0 ? 'top' : ''}">
+                            <span class="leaderboard-rank">#${index + 1}</span>
+                            <span class="leaderboard-name">${entry.difficulty.toUpperCase()}</span>
+                            <span class="leaderboard-score">${entry.score}s</span>
+                        </div>
+                    `).join('');
+
+                    // Update notice to show it's live
+                    document.querySelector('.global-notice').textContent = 'Live global leaderboard';
+                    document.querySelector('.global-notice').style.color = '#4ade80';
+                } else {
+                    const globalContainer = document.getElementById('globalLeaderboard');
+                    globalContainer.innerHTML = '<div class="leaderboard-empty">No global scores yet!</div>';
+                }
+            } catch (error) {
+                console.log('Global leaderboard not available (offline mode)');
+                // Keep the "Coming soon..." message if API is not available
+            }
+        }
+
+        async function submitToGlobalLeaderboard(score, length, difficulty, mode) {
+            try {
+                const response = await fetch('/api/leaderboard/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        score: score,
+                        length: length,
+                        difficulty: difficulty,
+                        mode: mode
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Score submitted to global leaderboard!');
+                    // Refresh global leaderboard
+                    fetchGlobalLeaderboard();
+                }
+            } catch (error) {
+                console.log('Could not submit to global leaderboard (offline mode)');
+            }
+        }
+
         // Initial draw and setup
         drawGame();
         spawnApple();
         updateLeaderboards();
+
+        // Fetch global leaderboard on load
+        fetchGlobalLeaderboard();
+
+        // Refresh global leaderboard every 30 seconds
+        setInterval(fetchGlobalLeaderboard, 30000);
 
         // Auto-start after 1 second
         setTimeout(() => {
